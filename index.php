@@ -1,5 +1,6 @@
 <?php
   session_start();
+  require_once('dictionary.php');
 
   // ini_set('display_errors', 1);
   // ini_set('display_startup_errors', 1);
@@ -8,26 +9,44 @@
   require('scripts.php');
   require '../vendor/autoload.php';
 
-  use Kreait\Firebase\Factory;
+  $dexter = new Dexter();
 
-  $factory = (new Factory)
-    ->withServiceAccount('../mugendecks_service_account.json')
-    ->withDatabaseUri('https://mugendecks-default-rtdb.firebaseio.com');
-
-
-  $word_id = 66286;
   if (isset($_GET['word_id']) && intval($_GET['word_id']) >= 0) {
-    $word_id = $_GET['word_id'];
+    $value = $dexter->getWordById(intval($_GET['word_id']));
+    echo '<pre>'.json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).'</pre>';
+  } else if (isset($_GET['get_load_starting_at']) && intval($_GET['get_load_starting_at']) >= 0) {
+
+    $value = $dexter->getRange(intval($_GET['get_load_starting_at']));
+
+    foreach($value as $vocab) {
+      $kanji = $vocab['kanji'];
+      $kana = $vocab['kana'];
+      $sense = $vocab['sense'];
+
+      echo 'Kana: <pre>'.json_encode($kana, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).'</pre><br><br>';
+
+
+      if ($kanji != []) {
+        echo 'Kanji: <pre>'.json_encode($kanji, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).'</pre><br><br>';
+      }
+
+      echo 'Sense: <pre>'.json_encode($sense, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).'</pre><br><br>';
+      
+    }
+    // echo '<div>Refresh for a random vocab word from JMDict!</div>
+    //       <pre>'.json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).'</pre>';
+
+
+
+          
+  } else {
+    $random_int = rand(0, 206149);
+    $value = $dexter->getWordById($random_int);
+    echo '<div>Refresh for a random vocab word from JMDict!</div>
+          <pre>'.json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).'</pre>';
   }
 
-  $database = $factory->createDatabase();
-  $reference = $database->getReference("words/${word_id}");
-
-  $snapshot = $reference->getSnapshot();
-  $value = $snapshot->getValue();
-
-  echo print_r($value);
-
-  echo '<br><br><br>';
-
-  echo print_r($value['kana']);
+  if (isset($_GET['kanji'])) {
+    $value = $dexter->getWordByKanji($_GET['kanji']);
+    echo print_r($value);
+  }
