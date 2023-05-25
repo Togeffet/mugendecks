@@ -10,43 +10,19 @@
   require '../vendor/autoload.php';
 
   $dexter = new Dexter();
+  $random_int = rand(0, 211387);
 
-  if (isset($_GET['word_id']) && intval($_GET['word_id']) >= 0) {
-    $value = $dexter->getWordById(intval($_GET['word_id']));
-    echo '<pre>'.json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).'</pre>';
-  } else if (isset($_GET['get_load_starting_at']) && intval($_GET['get_load_starting_at']) >= 0) {
+  if ($stmt = mysqli_prepare($conn, 
+      "SELECT KJ.kanji, KN.kana, G.meaning, G.applies_to_kanji, G.applies_to_kana FROM (SELECT * FROM jmdict_vocab ORDER BY RAND() LIMIT 1) V
+        LEFT JOIN jmdict_kanji KJ ON KJ.vocab_id = V.vocab_id
+        LEFT JOIN jmdict_kana KN ON KN.vocab_id = V.vocab_id AND (KN.applies_to_kanji = 0 OR KN.applies_to_kanji = KJ.kanji_sub_id)
+        LEFT JOIN jmdict_glossary G ON G.vocab_id = V.vocab_id")) {
 
-    $value = $dexter->getRange(intval($_GET['get_load_starting_at']));
-
-    foreach($value as $vocab) {
-      $kanji = $vocab['kanji'];
-      $kana = $vocab['kana'];
-      $sense = $vocab['sense'];
-
-      echo 'Kana: <pre>'.json_encode($kana, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).'</pre><br><br>';
-
-
-      if ($kanji != []) {
-        echo 'Kanji: <pre>'.json_encode($kanji, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).'</pre><br><br>';
+    if (mysqli_stmt_execute($stmt)) {
+      $result = $stmt->get_result();
+      while ($row = $result->fetch_assoc()) {
+        echo print_r($row) . '<br>';
       }
-
-      echo 'Sense: <pre>'.json_encode($sense, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).'</pre><br><br>';
       
     }
-    // echo '<div>Refresh for a random vocab word from JMDict!</div>
-    //       <pre>'.json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).'</pre>';
-
-
-
-          
-  } else {
-    $random_int = rand(0, 206149);
-    $value = $dexter->getWordById($random_int);
-    echo '<div>Refresh for a random vocab word from JMDict!</div>
-          <pre>'.json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT).'</pre>';
-  }
-
-  if (isset($_GET['kanji'])) {
-    $value = $dexter->getWordByKanji($_GET['kanji']);
-    echo print_r($value);
   }
