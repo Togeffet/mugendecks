@@ -1,6 +1,16 @@
 <?php
 session_start();
-require '/unimportant.php'; // Important file outside webserver
+
+// If running from the server, get secrets from /unimportant, else set it up for localhost
+if ($_SERVER['HTTP_HOST'] == "mugendecks.com") {
+  require '/unimportant.php';
+} else {
+  $dblocation = "localhost";
+  $dbuser = "admin"; // Change these if you need
+  $dbpass = "pass"; // Change these if you need
+}
+
+
 
 $js_version = 1;
 $css_version = 1;
@@ -8,6 +18,8 @@ $css_version = 1;
 // Database connection
 $conn = mysqli_connect($dblocation, $dbuser, $dbpass, "jmdict");
 $conn->set_charset("utf8mb4");
+
+
 
 function echoHeaderMeta($css_version, $allow_crawl = true, $title = "無限デックス", $description = "Learn Japanese using scripts from your favorite anime, novels, movies, and more!", 
     $social_title = "無限デックス", $social_description = "Learn Japanese using scripts from your favorite anime, novels, movies, and more!") {
