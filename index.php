@@ -1,6 +1,5 @@
 <?php
 session_start();
-require_once('dictionary.php');
 
 // ini_set('display_errors', 1);
 // ini_set('display_startup_errors', 1);
@@ -9,9 +8,22 @@ require_once('dictionary.php');
 require('scripts.php');
 require '../vendor/autoload.php';
 
-if (isset($_GET['search_term']) && $_GET['search_term'] != "") {
+if (isset($_GET['word_id']) && $_GET['word_id'] != "") {
+  $word_id = intval($_GET['word_id']);
+
+  $stmt = mysqli_prepare(
+    $conn,
+    "SELECT DISTINCT V.vocab_id, KJ.kanji, KN.kana, G.meaning, G.applies_to_kanji, G.applies_to_kana FROM jmdict_vocab V
+          LEFT JOIN jmdict_kanji KJ ON KJ.vocab_id = V.vocab_id
+          LEFT JOIN jmdict_kana KN ON KN.vocab_id = V.vocab_id AND (KN.applies_to_kanji = 0 OR KN.applies_to_kanji = KJ.kanji_sub_id)
+          LEFT JOIN jmdict_glossary G ON G.vocab_id = V.vocab_id
+          WHERE V.vocab_id = ?"
+  );
+  mysqli_stmt_bind_param($stmt, "i", $word_id);
+
+} else if (isset($_GET['search_term']) && $_GET['search_term'] != "") {
   $search_term = $_GET['search_term'];
-  $search_term = "%${search_term}%";
+  $search_term = "${search_term}%";
 
   $stmt = mysqli_prepare(
     $conn,
